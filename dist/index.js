@@ -8,48 +8,10 @@ exports.default = function (_ref) {
 	var t = _ref.types;
 
 
-	function isValidRequireCall(path) {
-		if (!path.isCallExpression()) return false;
-		if (!path.get("callee").isIdentifier({ name: "require" })) return false;
-		if (path.scope.getBinding("require")) return false;
-
-		var args = path.get("arguments");
-		if (args.length !== 1) return false;
-
-		var arg = args[0];
-		if (!arg.isStringLiteral()) return false;
-
-		return true;
-	}
-
-	var amdVisitor = {
-		CallExpression: function CallExpression(path) {
-			if (!isValidRequireCall(path)) return;
-			this.anonymousSources.push(path.node.arguments[0]);
-			path.remove();
-		},
-		VariableDeclarator: function VariableDeclarator(path) {
-			var id = path.get("id");
-			if (!id.isIdentifier()) return;
-
-			var init = path.get("init");
-			if (!isValidRequireCall(init)) return;
-
-			var source = init.node.arguments[0];
-			this.sourceNames[source.value] = true;
-			this.sources.push([id.node, source]);
-
-			path.remove();
-		}
-	};
-
 	return {
 		visitor: {
 			Program: {
 				exit: function exit(path, file) {
-
-					//path.traverse(amdVisitor, this);
-
 					var body = path.get("body"),
 					    sources = [],
 					    anonymousSources = [],
@@ -130,6 +92,6 @@ var _babelTemplate2 = _interopRequireDefault(_babelTemplate);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var buildModule = (0, _babelTemplate2.default)("\ndefine('require', [IMPORT_PATHS], function(require, IMPORT_VARS) {\n\tNAMED_IMPORTS;\n\tBODY;\n});\n");
+var buildModule = (0, _babelTemplate2.default)("\ndefine(['require', IMPORT_PATHS], function(require, IMPORT_VARS) {\n\tNAMED_IMPORTS;\n\tBODY;\n});\n");
 
 ;
