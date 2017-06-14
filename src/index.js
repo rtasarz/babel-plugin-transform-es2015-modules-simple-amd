@@ -2,13 +2,14 @@ import 'better-log/install';
 import template from "babel-template";
 
 let buildModule = template(`
-define([IMPORT_PATHS], function(IMPORT_VARS) {
+define(['require', IMPORT_PATHS], function(require, IMPORT_VARS) {
 	NAMED_IMPORTS;
 	BODY;
 });
 `);
 
-module.exports = function({ types: t }) {
+export default function({ types: t }) {
+
 	return {
 		visitor: {
 			Program: {
@@ -28,7 +29,7 @@ module.exports = function({ types: t }) {
 						if (path.isExportDefaultDeclaration()) {
 							let declaration = path.get("declaration");
 
-							if(isLast) {
+							if (isLast) {
 								path.replaceWith(t.returnStatement(declaration.node));
 							} else {
 								middleDefaultExportID = path.scope.generateUidIdentifier("export_default");
@@ -41,9 +42,9 @@ module.exports = function({ types: t }) {
 						if (path.isImportDeclaration()) {
 							let specifiers = path.node.specifiers;
 
-							if(specifiers.length == 0) {
+							if (specifiers.length == 0) {
 								anonymousSources.push(path.node.source);
-							} else if(specifiers.length == 1 && specifiers[0].type == 'ImportDefaultSpecifier') {
+							} else if (specifiers.length == 1 && specifiers[0].type == 'ImportDefaultSpecifier') {
 								sources.push(path.node.source);
 								vars.push(specifiers[0]);
 							} else {
@@ -63,12 +64,12 @@ module.exports = function({ types: t }) {
 							isModular = true;
 						}
 
-						if(isLast && middleDefaultExportID) {
+						if (isLast && middleDefaultExportID) {
 							path.insertAfter(t.returnStatement(middleDefaultExportID));
 						}
 					}
 
-					if(isModular) {
+					if (isModular) {
 						path.node.body = [
 							buildModule({
 								IMPORT_PATHS: sources.concat(anonymousSources),
